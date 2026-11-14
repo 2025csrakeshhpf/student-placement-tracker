@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Student Placement Tracker &amp; Preparation Platform</title>
+  <style>
+    :root {
+      --bg: #070d19;
+      --surface: #111c33;
+      --surface-alt: #091122;
+      --border: #233354;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #818cf8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body {
+      background: radial-gradient(circle at top right, #132242 0%, var(--bg) 55%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* Auth Screen */
+    .auth-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .auth-card {
+      width: 100%; max-width: 440px; background: rgba(17, 28, 51, 0.92);
+      border: 1px solid var(--border); border-radius: 18px; padding: 34px;
+      box-shadow: 0 24px 48px rgba(0,0,0,0.55); backdrop-filter: blur(10px);
+    }
+    .auth-card h1 {
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      font-size: 1.75rem; margin-bottom: 8px;
+    }
+    .auth-card p { color: var(--muted); font-size: 0.92rem; margin-bottom: 22px; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 0.86rem; color: #cbd5e1; margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 11px 14px; background: var(--surface-alt); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-size: 0.95rem; outline: none;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; border: none; border-radius: 10px;
+      padding: 11px 16px; font-size: 0.92rem; font-weight: 600; cursor: pointer;
+    }
+    .btn:hover { opacity: 0.92; }
+    .btn-full { width: 100%; margin-top: 6px; }
+    .btn-secondary { background: #263654; }
+    .btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); color: #052e16; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .error-msg { color: var(--danger); font-size: 0.88rem; margin-top: 10px; min-height: 20px; }
+    .toggle-link { display: block; text-align: center; margin-top: 15px; color: var(--accent); font-size: 0.9rem; cursor: pointer; }
+    .hidden { display: none !important; }
+
+    /* Navbar */
+    .navbar {
+      background: rgba(17, 28, 51, 0.95); border-bottom: 1px solid var(--border);
+      padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+      position: sticky; top: 0; z-index: 20;
+    }
+    .brand {
+      font-size: 1.15rem; font-weight: 800;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .nav-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .nav-tab {
+      background: transparent; border: 1px solid transparent; color: var(--muted);
+      padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.88rem;
+    }
+    .nav-tab.active { background: rgba(56,189,248,0.14); color: var(--accent); border-color: rgba(56,189,248,0.4); }
+    .user-pill { display: flex; align-items: center; gap: 12px; font-size: 0.88rem; color: #cbd5e1; }
+    .container { max-width: 1300px; margin: 0 auto; padding: 24px; }
+
+    /* Dashboard */
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(14,165,233,0.18), rgba(99,102,241,0.18));
+      border: 1px solid rgba(56,189,248,0.35); border-radius: 16px; padding: 20px 24px;
+      margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;
+    }
+    .day-pill {
+      display: inline-block; background: rgba(34,197,94,0.18); border: 1px solid var(--success);
+      color: #86efac; padding: 4px 12px; border-radius: 999px; font-size: 0.82rem; font-weight: 700; margin-bottom: 6px;
+    }
+    .lc-layout { display: grid; grid-template-columns: 290px 1fr; gap: 20px; }
+    @media (max-width: 920px) { .lc-layout { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    }
+    .profile-avatar {
+      width: 72px; height: 72px; border-radius: 18px; background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 800; color: #fff;
+    }
+    .stat-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid rgba(51,65,85,0.45); font-size: 0.88rem; }
+    .stat-row:last-child { border-bottom: none; }
+
+    .top-cards { display: grid; grid-template-columns: 1.25fr 1fr; gap: 18px; margin-bottom: 18px; }
+    @media (max-width: 760px) { .top-cards { grid-template-columns: 1fr; } }
+    .ring-box { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .progress-circle {
+      width: 144px; height: 144px; border-radius: 50%;
+      background: conic-gradient(var(--success) 0deg, #243452 0deg);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .progress-inner {
+      width: 116px; height: 116px; border-radius: 50%; background: var(--surface);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .diff-pill {
+      background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px;
+      padding: 9px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; min-width: 160px; font-size: 0.86rem;
+    }
+
+    /* 365-Day Heatmap with Sun..Sat Days */
+    .heatmap-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .heatmap-body { display: flex; gap: 8px; align-items: flex-start; overflow-x: auto; padding-bottom: 6px; }
+    .hm-days-col {
+      display: grid; grid-template-rows: repeat(7, 13px); gap: 3px;
+      color: var(--muted); font-size: 0.72rem; line-height: 13px; font-weight: 600; padding-right: 4px;
+    }
+    .heatmap-grid {
+      display: grid; grid-template-rows: repeat(7, 13px); grid-auto-flow: column; gap: 3px;
+    }
+    .hm-cell { width: 13px; height: 13px; border-radius: 3px; background: #1e2d4a; }
+    .hm-l1 { background: #14532d; }
+    .hm-l2 { background: #16a34a; }
+    .hm-l3 { background: #22c55e; }
+    .hm-l4 { background: #4ade80; }
+    .hm-months { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.78rem; margin-top: 6px; padding-left: 34px; }
+
+    /* Problem Arena */
+    .filter-bar {
+      display: flex; gap: 10px; flex-wrap: wrap; background: var(--surface); padding: 14px;
+      border-radius: 12px; border: 1px solid var(--border); margin-bottom: 16px; align-items: center;
+    }
+    .filter-bar select, .filter-bar input {
+      background: var(--surface-alt); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 8px; font-size: 0.88rem;
+    }
+    .problem-list { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .problem-row {
+      display: flex; justify-content: space-between; align-items: center; padding: 13px 18px;
+      border-bottom: 1px solid var(--border); gap: 12px;
+    }
+    .problem-row:last-child { border-bottom: none; }
+    .badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-left: 6px; }
+    .badge-easy { background: rgba(34,197,94,0.18); color: var(--success); }
+    .badge-medium { background: rgba(245,158,11,0.18); color: var(--warning); }
+    .badge-hard { background: rgba(239,68,68,0.18); color: var(--danger); }
+    .badge-cat { background: rgba(56,189,248,0.18); color: var(--accent); }
+
+    .workspace {
+      display: grid; grid-template-columns: 1fr 1.3fr; gap: 20px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-top: 14px;
+    }
+    @media (max-width: 900px) { .workspace { grid-template-columns: 1fr; } }
+    .timer-banner {
+      display: flex; justify-content: space-between; align-items: center; background: var(--surface-alt);
+      border: 1px solid var(--border); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px;
+    }
+    .timer-status.paused { color: var(--warning); font-weight: 700; }
+    .timer-status.running { color: var(--success); font-weight: 700; }
+    textarea.code-editor {
+      width: 100%; min-height: 240px; background: #030712; color: #e2e8f0; border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px; font-family: Consolas, monospace; font-size: 0.92rem; line-height: 1.5; margin: 10px 0;
+    }
+    .output-box {
+      background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px;
+      padding: 12px; margin-top: 10px; font-size: 0.88rem; white-space: pre-wrap; line-height: 1.5;
+    }
+    .case-item {
+      padding: 8px 10px; border-radius: 8px; margin-top: 6px; font-family: Consolas, monospace; font-size: 0.83rem;
+      background: rgba(15, 23, 42, 0.8); border-left: 4px solid var(--danger);
+    }
+    .case-item.pass { border-left-color: var(--success); }
+    .time-advice {
+      margin-top: 10px; padding: 11px 14px; border-radius: 10px;
+      background: rgba(245, 158, 11, 0.14); border: 1px solid var(--warning); color: #fde68a; font-size: 0.88rem;
+    }
+
+    /* Color-Coded Correct (Green) & Wrong (Red) Answer Cards in Interviews */
+    .score-pill {
+      background: var(--surface-alt); border: 1px solid var(--accent); padding: 6px 12px;
+      border-radius: 999px; font-size: 0.84rem; font-weight: 700; color: var(--accent);
+    }
+    .chat-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 18px; display: flex; flex-direction: column; height: 520px;
+    }
+    .chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+    .msg { max-width: 84%; padding: 12px 16px; border-radius: 12px; font-size: 0.93rem; line-height: 1.5; white-space: pre-wrap; }
+    .msg.ai { background: var(--surface-alt); border: 1px solid var(--border); align-self: flex-start; }
+    .msg.user { background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; align-self: flex-end; }
+    .msg.correct-box {
+      background: rgba(34, 197, 94, 0.16);
+      border: 1.5px solid #22c55e;
+      color: #86efac;
+      font-weight: 600;
+      align-self: flex-start;
+    }
+    .msg.wrong-box {
+      background: rgba(239, 68, 68, 0.16);
+      border: 1.5px solid #ef4444;
+      color: #fca5a5;
+      font-weight: 600;
+      align-self: flex-start;
+    }
+    .chat-input-row { display: flex; gap: 10px; align-items: center; }
+    .chat-input-row input {
+      flex: 1; background: var(--surface-alt); border: 1px solid var(--border); color: var(--text); padding: 11px 14px; border-radius: 10px;
+    }
+    .mic-pulse { animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.45; } 100% { opacity: 1; } }
+  </style>
+</head>
+<body>
+
+  <!-- AUTH VIEW -->
+  <div id="authSection" class="auth-wrapper">
+    <div class="auth-card">
+      <h1 id="authTitle">Student Placement Login</h1>
+      <p id="authSubtitle">Already have an account? Login directly, or create a new student account below.</p>
+      <div id="registerFields" class="hidden">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="fullName" value="Rakesh HP" />
+        </div>
+        <div class="form-group">
+          <label>Target Placement Role</label>
+          <select id="targetRole">
+            <option value="Software Engineer (SDE)">Software Engineer (SDE)</option>
+            <option value="Full Stack Developer">Full Stack Developer</option>
+            <option value="Data Analyst / ML Engineer">Data Analyst / ML Engineer</option>
+            <option value="DevOps / Cloud Engineer">DevOps / Cloud Engineer</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email ID</label>
+        <input type="email" id="emailInput" value="rakeshhp2142@gmail.com" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="passwordInput" value="password123" />
+      </div>
+      <button id="authSubmitBtn" class="btn btn-full" onclick="handleAuth()">Login to Website</button>
+      <div id="authError" class="error-msg"></div>
+      <a class="toggle-link" id="toggleAuthLink" onclick="toggleAuthMode()">New user? Create a Student Account first</a>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="appSection" class="hidden">
+    <nav class="navbar">
+      <div class="brand">AI Placement Tracker &bull; 2,040+ Problems</div>
+      <div class="nav-tabs">
+        <button class="nav-tab active" onclick="switchTab('dashboard', this)">Profile &amp; Daily Activity</button>
+        <button class="nav-tab" onclick="switchTab('arena', this)">2,040+ Problem Arena</button>
+        <button class="nav-tab" onclick="switchTab('training', this)">Round-Wise Interview (Cutoff 16/30)</button>
+        <button class="nav-tab" onclick="switchTab('interview', this)">Live Voice-to-Voice Interview</button>
+      </div>
+      <div class="user-pill">
+        <span id="navUserLabel">Rakesh HP</span>
+        <button class="btn btn-secondary" style="padding:6px 12px;font-size:0.82rem;" onclick="logout()">Logout</button>
+      </div>
+    </nav>
+
+    <div class="container">
+      <!-- TAB 1: DASHBOARD -->
+      <div id="tab-dashboard">
+        <div class="hero-banner">
+          <div>
+            <div class="day-pill" id="todayDayBadge">Saturday, November 14, 2026</div>
+            <h2 style="font-size:1.3rem;margin-bottom:4px;">Welcome back, <span id="heroUserName" style="color:var(--accent);">Rakesh HP</span>!</h2>
+            <p style="color:var(--muted);font-size:0.9rem;">Track your daily Sunday–Saturday coding streak, clear 16/30 round cutoffs, and practice live voice interviews.</p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn" onclick="switchTab('arena', document.querySelectorAll('.nav-tab')[1])">Solve Problems (+1)</button>
+            <button class="btn btn-secondary" onclick="switchTab('interview', document.querySelectorAll('.nav-tab')[3])">&#127908; Live Voice Interview</button>
+          </div>
+        </div>
+
+        <div class="lc-layout">
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+              <div class="profile-avatar" id="avatarInitials">RH</div>
+              <div>
+                <h2 id="profileName" style="font-size:1.15rem;">Rakesh HP</h2>
+                <div id="profileRole" style="color:var(--accent);font-size:0.84rem;">Software Engineer (SDE)</div>
+              </div>
+            </div>
+
+            <h4 style="margin:14px 0 8px;color:#cbd5e1;font-size:0.9rem;">Progress Breakdown</h4>
+            <div class="stat-row"><span>Coding Solved</span><strong id="sideCoding">0 / 1020</strong></div>
+            <div class="stat-row"><span>Aptitude Solved</span><strong id="sideAptitude">0 / 1020</strong></div>
+            <div class="stat-row"><span>Tab-Switch Alerts</span><strong id="kpiTabSwitches">0</strong></div>
+
+            <h4 style="margin:18px 0 8px;color:#cbd5e1;font-size:0.9rem;">12 Supported Languages</h4>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:0.76rem;">
+              <span class="badge badge-cat">Python</span><span class="badge badge-cat">C++</span>
+              <span class="badge badge-cat">C</span><span class="badge badge-cat">Java</span>
+              <span class="badge badge-cat">JavaScript</span><span class="badge badge-cat">TypeScript</span>
+              <span class="badge badge-cat">Go</span><span class="badge badge-cat">Rust</span>
+              <span class="badge badge-cat">C#</span><span class="badge badge-cat">Ruby</span>
+              <span class="badge badge-cat">PHP</span><span class="badge badge-cat">Kotlin</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="top-cards">
+              <div class="card ring-box">
+                <div class="progress-circle" id="solvedRing">
+                  <div class="progress-inner">
+                    <div>
+                      <strong id="ringSolvedNum" style="font-size:1.7rem;color:var(--text);">0</strong>
+                      <span id="ringTotalNum" style="color:var(--muted);font-size:0.85rem;">/2040</span>
+                    </div>
+                    <div style="color:var(--success);font-size:0.8rem;font-weight:700;">&#10003; Solved</div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="diff-pill"><span style="color:var(--success);font-weight:600;">Easy</span><strong id="statEasy">0/680</strong></div>
+                  <div class="diff-pill"><span style="color:var(--warning);font-weight:600;">Med.</span><strong id="statMed">0/680</strong></div>
+                  <div class="diff-pill"><span style="color:var(--danger);font-weight:600;">Hard</span><strong id="statHard">0/680</strong></div>
+                </div>
+              </div>
+
+              <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;">
+                <div>
+                  <div style="color:var(--muted);font-size:0.85rem;">Placement Readiness &amp; Badges</div>
+                  <div style="font-size:1.75rem;font-weight:800;margin:6px 0;color:var(--accent);" id="badgeCount">0 Badges</div>
+                  <div style="color:#cbd5e1;font-size:0.86rem;">Every solved problem increments your counter by +1 and lights up today's square!</div>
+                </div>
+                <button class="btn btn-success" onclick="switchTab('training', document.querySelectorAll('.nav-tab')[2])">Take Cutoff Round Test &rarr;</button>
+              </div>
+            </div>
+
+            <!-- 365-Day Heatmap with Sunday - Saturday labels -->
+            <div class="card" style="margin-bottom:18px;">
+              <div class="heatmap-header">
+                <div>
+                  <strong id="hmTotalSubmissions" style="font-size:1.05rem;">0</strong>
+                  <span style="color:var(--muted);font-size:0.9rem;"> submissions in the past one year</span>
+                </div>
+                <div style="color:var(--muted);font-size:0.86rem;">
+                  Total active days: <strong id="hmActiveDays" style="color:var(--text);">0</strong> &nbsp;|&nbsp;
+                  Max streak: <strong id="hmMaxStreak" style="color:var(--text);">0</strong>
+                </div>
+              </div>
+              <div class="heatmap-body">
+                <div class="hm-days-col">
+                  <span>Sun</span>
+                  <span>Mon</span>
+                  <span>Tue</span>
+                  <span>Wed</span>
+                  <span>Thu</span>
+                  <span>Fri</span>
+                  <span>Sat</span>
+                </div>
+                <div id="heatmapGrid" class="heatmap-grid"></div>
+              </div>
+              <div class="hm-months">
+                <span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span>
+                <span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 style="font-size:1rem;margin-bottom:12px;">&#10003; Recent AC (Accepted Submissions)</h3>
+              <div id="recentAcList" style="color:var(--muted);font-size:0.9rem;">
+                Counter starts at 0. Solve your first problem to increment it to 1!
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: 2,040+ PROBLEM ARENA -->
+      <div id="tab-arena" class="hidden">
+        <div class="filter-bar">
+          <select id="filterCategory" onchange="loadProblems(1)">
+            <option value="">All Categories (2,040)</option>
+            <option value="Coding">Coding (1,020)</option>
+            <option value="Aptitude">Aptitude (1,020)</option>
+          </select>
+          <select id="filterDifficulty" onchange="loadProblems(1)">
+            <option value="">All Difficulties</option>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
+          <input type="text" id="filterSearch" placeholder="Search topic or title..." onkeyup="if(event.key==='Enter') loadProblems(1)" />
+          <button class="btn" onclick="loadProblems(1)">Filter</button>
+          <span id="problemCountLabel" style="margin-left:auto;color:var(--muted);font-size:0.88rem;">Loading...</span>
+        </div>
+
+        <div id="problemListContainer" class="problem-list"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;">
+          <button class="btn btn-secondary" onclick="changePage(-1)">Previous</button>
+          <span id="pageIndicator" style="color:var(--muted);font-size:0.9rem;">Page 1</span>
+          <button class="btn btn-secondary" onclick="changePage(1)">Next</button>
+        </div>
+
+        <div id="problemWorkspace" class="workspace hidden">
+          <div>
+            <button class="btn btn-secondary" style="margin-bottom:12px;padding:6px 12px;font-size:0.84rem;" onclick="closeWorkspace()">&larr; Back to List</button>
+            <h2 id="wsTitle" style="margin-bottom:8px;">Problem Title</h2>
+            <div id="wsMeta" style="margin-bottom:12px;"></div>
+            <p id="wsDesc" style="color:#cbd5e1;line-height:1.6;margin-bottom:14px;white-space:pre-wrap;"></p>
+            <div class="output-box" id="wsExamples"></div>
+          </div>
+
+          <div>
+            <div class="timer-banner">
+              <div>Focus Timer: <strong id="timerDisplay" style="font-size:1.05rem;">00:00</strong> <span style="color:var(--muted);font-size:0.8rem;">(Target &lt; 05:00)</span></div>
+              <div id="timerStateBadge" class="timer-status running">RUNNING (Tab Active)</div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <label style="font-size:0.88rem;color:#cbd5e1;">Programming Language:</label>
+              <select id="langSelect" onchange="updateStarterTemplate()" style="background:var(--surface-alt);color:var(--text);border:1px solid var(--border);padding:7px 12px;border-radius:8px;">
+                <option value="python">Python 3</option>
+                <option value="cpp">C++ 17</option>
+                <option value="c">C (GCC)</option>
+                <option value="java">Java 17</option>
+                <option value="javascript">JavaScript (Node)</option>
+                <option value="typescript">TypeScript</option>
+                <option value="go">Go (Golang)</option>
+                <option value="rust">Rust</option>
+                <option value="csharp">C# (.NET)</option>
+                <option value="ruby">Ruby</option>
+                <option value="php">PHP</option>
+                <option value="kotlin">Kotlin</option>
+              </select>
+            </div>
+
+            <textarea id="codeEditor" class="code-editor"></textarea>
+
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-success" onclick="submitSolution()">Run &amp; Submit (+1 Solved)</button>
+              <button class="btn btn-secondary" onclick="updateStarterTemplate()">Reset Code</button>
+            </div>
+            <div id="submissionResult" class="output-box hidden"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: ROUND-WISE INTERVIEW -->
+      <div id="tab-training" class="hidden">
+        <div class="filter-bar">
+          <label style="font-weight:600;">Select Round:</label>
+          <select id="roundSelect" onchange="resetRoundSession('training')">
+            <option value="AptitudeRound">Round 1: Quantitative &amp; Logical Aptitude</option>
+            <option value="TechnicalDSA">Round 2: Technical DSA &amp; Coding</option>
+            <option value="CoreCS">Round 3: Core CS (OS, DBMS, CN, OOPS)</option>
+            <option value="HRRound">Round 4: HR &amp; Behavioral Round</option>
+          </select>
+          <button class="btn" onclick="askNextQuestion('training', false)">Ask AI Coach (New Question)</button>
+          <span class="score-pill" id="trainingScoreBadge">Score: 0 / 30 (Cutoff: 16)</span>
+        </div>
+        <div class="chat-box">
+          <div id="trainingMessages" class="chat-messages">
+            <div class="msg ai">Select Round 1, 2, 3, or 4 above and press "Ask AI Coach (New Question)". Correct answers appear in GREEN; wrong answers + proper solution appear in RED.</div>
+          </div>
+          <div class="chat-input-row">
+            <input type="text" id="trainingInput" placeholder="Type your answer and press Enter..." onkeyup="if(event.key==='Enter') submitRoundAnswer('training', false)" />
+            <button class="btn" onclick="submitRoundAnswer('training', false)">Submit Answer</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: LIVE VOICE-TO-VOICE MOCK INTERVIEW (WITH ROUND SELECTION) -->
+      <div id="tab-interview" class="hidden">
+        <div class="filter-bar">
+          <label style="font-weight:600;">Interview Round:</label>
+          <select id="voiceRoundSelect" onchange="resetRoundSession('interview')">
+            <option value="AptitudeRound">Round 1: Aptitude Round</option>
+            <option value="TechnicalDSA">Round 2: Technical DSA Round</option>
+            <option value="CoreCS">Round 3: Core CS Round</option>
+            <option value="HRRound">Round 4: HR &amp; Behavioral Round</option>
+          </select>
+          <span class="score-pill" id="interviewScoreBadge">Score: 0 / 30 (Cutoff: 16)</span>
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.86rem;color:#cbd5e1;">
+            <input type="checkbox" id="voiceOutputToggle" checked /> AI Voice On
+          </label>
+          <button class="btn btn-success" style="margin-left:auto;" onclick="startMockInterview()">Start Voice Interview</button>
+          <button class="btn btn-danger" onclick="stopVoiceSpeech()">Mute Voice</button>
+        </div>
+
+        <div class="chat-box">
+          <div id="interviewMessages" class="chat-messages">
+            <div class="msg ai">Choose Round 1, 2, 3, or 4 above and click "Start Voice Interview". The AI will speak and display the question first, listen to your spoken answer, show GREEN (correct) or RED (wrong + right answer), and move to the next question!</div>
+          </div>
+          <div class="chat-input-row">
+            <button id="micBtn" class="btn btn-secondary" onclick="toggleVoiceMic()">&#127908; Speak Answer</button>
+            <input type="text" id="interviewInput" placeholder="Speak with Mic or type your answer..." onkeyup="if(event.key==='Enter') submitRoundAnswer('interview', true)" />
+            <button class="btn" onclick="submitRoundAnswer('interview', true)">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:5000";
+    let isRegisterMode = false;
+    let currentUser = null;
+    let currentPage = 1;
+    let activeProblem = null;
+    let timerInterval = null;
+    let elapsedSeconds = 0;
+    let tabSwitchCount = 0;
+    let recognition = null;
+    let isListening = false;
+
+    const roundState = {
+      training: { askedIds: [], currentQuestionId: null, score: 0, questionNumber: 0 },
+      interview: { askedIds: [], currentQuestionId: null, score: 0, questionNumber: 0 }
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      updateTodayDayBadge();
+      renderHeatmap({});
+      const saved = localStorage.getItem("placement_user");
+      if (saved) {
+        try {
+          currentUser = JSON.parse(saved);
+          if (currentUser && currentUser.email) {
+            enterApp();
+          }
+        } catch (e) {
+          localStorage.removeItem("placement_user");
+        }
+      }
+    });
+
+    function updateTodayDayBadge() {
+      const now = new Date();
+      const opts = { weekday: "long", year: "numeric", month: "long", day: "numeric" };
+      document.getElementById("todayDayBadge").textContent = "Today: " + now.toLocaleDateString("en-US", opts);
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (!activeProblem) return;
+      const badge = document.getElementById("timerStateBadge");
+      if (document.hidden) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        tabSwitchCount++;
+        document.getElementById("kpiTabSwitches").textContent = tabSwitchCount;
+        badge.textContent = `PAUSED (Tab Switch #${tabSwitchCount})`;
+        badge.className = "timer-status paused";
+      } else {
+        badge.textContent = "RUNNING (Tab Active)";
+        badge.className = "timer-status running";
+        startFocusTimer();
+      }
+    });
+
+    function toggleAuthMode() {
+      isRegisterMode = !isRegisterMode;
+      document.getElementById("authError").textContent = "";
+      document.getElementById("registerFields").classList.toggle("hidden", !isRegisterMode);
+      document.getElementById("authTitle").textContent = isRegisterMode ? "Create Student Account" : "Student Placement Login";
+      document.getElementById("authSubtitle").textContent = isRegisterMode
+        ? "Create your account to access 2,040+ problems and Voice AI Interviews."
+        : "Already have an account? Login directly, or create a new student account below.";
+      document.getElementById("authSubmitBtn").textContent = isRegisterMode ? "Create Account & Enter" : "Login to Website";
+      document.getElementById("toggleAuthLink").textContent = isRegisterMode
+        ? "Already have an account? Login directly"
+        : "New user? Create a Student Account first";
+    }
+
+    async function handleAuth() {
+      const errEl = document.getElementById("authError");
+      errEl.textContent = "";
+      const email = document.getElementById("emailInput").value.trim();
+      const password = document.getElementById("passwordInput").value.trim();
+      const name = document.getElementById("fullName").value.trim();
+      const targetRole = document.getElementById("targetRole").value;
+
+      const endpoint = isRegisterMode ? "/api/auth/register" : "/api/auth/login";
+      const payload = isRegisterMode ? { name, email, password, targetRole } : { email, password };
+
+      try {
+        const res = await fetch(API_BASE + endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errEl.textContent = data.detail || "Authentication failed.";
+          return;
+        }
+        currentUser = data.user || { name, email, targetRole };
+        localStorage.setItem("placement_user", JSON.stringify(currentUser));
+        enterApp();
+      } catch (e) {
+        errEl.textContent = "Cannot connect to backend server on port 5000.";
+      }
+    }
+
+    function enterApp() {
+      document.getElementById("authSection").classList.add("hidden");
+      document.getElementById("appSection").classList.remove("hidden");
+      document.getElementById("navUserLabel").textContent = currentUser.name;
+      document.getElementById("heroUserName").textContent = currentUser.name;
+      document.getElementById("profileName").textContent = currentUser.name;
+      document.getElementById("profileRole").textContent = currentUser.targetRole || "Software Engineer (SDE)";
+      document.getElementById("avatarInitials").textContent = (currentUser.name || "RH").slice(0, 2).toUpperCase();
+      loadDashboardStats();
+      loadProblems(1);
+    }
+
+    function logout() {
+      localStorage.removeItem("placement_user");
+      currentUser = null;
+      stopVoiceSpeech();
+      document.getElementById("appSection").classList.add("hidden");
+      document.getElementById("authSection").classList.remove("hidden");
+    }
+
+    function switchTab(tabName, btnEl) {
+      ["dashboard", "arena", "training", "interview"].forEach(t => {
+        document.getElementById("tab-" + t).classList.add("hidden");
+      });
+      document.querySelectorAll(".nav-tab").forEach(b => b.classList.remove("active"));
+      document.getElementById("tab-" + tabName).classList.remove("hidden");
+      if (btnEl) btnEl.classList.add("active");
+      if (tabName === "dashboard") loadDashboardStats();
+    }
+
+    function renderHeatmap(heatmapData) {
+      const grid = document.getElementById("heatmapGrid");
+      grid.innerHTML = "";
+      const today = new Date();
+      const start = new Date(today);
+      start.setDate(today.getDate() - 364);
+      // Align start to Sunday so rows strictly match Sun..Sat
+      start.setDate(start.getDate() - start.getDay());
+
+      const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+        const iso = d.toISOString().split("T")[0];
+        const count = heatmapData[iso] || 0;
+        const cell = document.createElement("div");
+        cell.className = "hm-cell";
+        if (count >= 5) cell.classList.add("hm-l4");
+        else if (count >= 3) cell.classList.add("hm-l3");
+        else if (count === 2) cell.classList.add("hm-l2");
+        else if (count === 1) cell.classList.add("hm-l1");
+        cell.title = `${dayNames[d.getDay()]}, ${iso}: ${count} submission(s)`;
+        grid.appendChild(cell);
+      }
+    }
+
+    async function loadDashboardStats() {
+      if (!currentUser) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/dashboard/${encodeURIComponent(currentUser.email)}`);
+        if (!res.ok) return;
+        const stats = await res.json();
+
+        const solved = stats.totalSolved ?? 0;
+        const total = stats.totalProblems ?? 2040;
+        document.getElementById("ringSolvedNum").textContent = solved;
+        document.getElementById("ringTotalNum").textContent = `/${total}`;
+
+        const deg = Math.min(360, Math.round((solved / Math.max(1, total)) * 360));
+        document.getElementById("solvedRing").style.background = `conic-gradient(var(--success) ${deg}deg, #243452 ${deg}deg)`;
+
+        document.getElementById("statEasy").textContent = `${stats.easySolved}/${stats.easyTotal}`;
+        document.getElementById("statMed").textContent = `${stats.mediumSolved}/${stats.mediumTotal}`;
+        document.getElementById("statHard").textContent = `${stats.hardSolved}/${stats.hardTotal}`;
+
+        document.getElementById("sideCoding").textContent = `${stats.codingSolved} / 1020`;
+        document.getElementById("sideAptitude").textContent = `${stats.aptitudeSolved} / 1020`;
+        document.getElementById("badgeCount").textContent = `${Math.floor(solved / 5)} Badges`;
+
+        document.getElementById("hmTotalSubmissions").textContent = stats.totalSubmissions ?? 0;
+        document.getElementById("hmActiveDays").textContent = stats.activeDays ?? 0;
+        document.getElementById("hmMaxStreak").textContent = stats.maxStreak ?? 0;
+        renderHeatmap(stats.heatmap || {});
+
+        const acBox = document.getElementById("recentAcList");
+        if (stats.recentAC && stats.recentAC.length > 0) {
+          acBox.innerHTML = stats.recentAC.map(item => `
+            <div class="stat-row">
+              <span><strong style="color:var(--text);">${item.problem_title}</strong> <span class="badge badge-cat">${item.language}</span></span>
+              <span style="color:var(--success);">${item.time_taken_sec}s &bull; Accepted</span>
+            </div>
+          `).join("");
+        } else {
+          acBox.textContent = "Counter starts at 0. Solve your first problem to increment it to 1!";
+        }
+      } catch (e) {}
+    }
+
+    async function loadProblems(page) {
+      currentPage = page;
+      const category = document.getElementById("filterCategory").value;
+      const difficulty = document.getElementById("filterDifficulty").value;
+      const search = document.getElementById("filterSearch").value.trim();
+
+      const params = new URLSearchParams({ page, limit: 15 });
+      if (category) params.append("category", category);
+      if (difficulty) params.append("difficulty", difficulty);
+      if (search) params.append("search", search);
+
+      const res = await fetch(`${API_BASE}/api/problems?${params.toString()}`);
+      const data = await res.json();
+      document.getElementById("problemCountLabel").textContent = `Showing ${data.items.length} of ${data.total} problems`;
+      document.getElementById("pageIndicator").textContent = `Page ${page}`;
+
+      const listEl = document.getElementById("problemListContainer");
+      listEl.innerHTML = "";
+      data.items.forEach(p => {
+        const diffClass = p.difficulty === "Easy" ? "badge-easy" : p.difficulty === "Medium" ? "badge-medium" : "badge-hard";
+        const row = document.createElement("div");
+        row.className = "problem-row";
+        row.innerHTML = `
+          <div>
+            <strong>#${p.id}. ${p.title}</strong>
+            <span class="badge badge-cat">${p.category}</span>
+            <span class="badge ${diffClass}">${p.difficulty}</span>
+            <div style="color:var(--muted);font-size:0.82rem;margin-top:4px;">Topic: ${p.topic}</div>
+          </div>
+          <button class="btn" style="padding:7px 14px;font-size:0.85rem;" onclick="openProblem(${p.id})">Solve</button>
+        `;
+        listEl.appendChild(row);
+      });
+    }
+
+    function changePage(delta) {
+      if (currentPage + delta < 1) return;
+      loadProblems(currentPage + delta);
+    }
+
+    async function openProblem(problemId) {
+      const res = await fetch(`${API_BASE}/api/problems/${problemId}`);
+      activeProblem = await res.json();
+
+      document.getElementById("problemListContainer").classList.add("hidden");
+      document.getElementById("problemWorkspace").classList.remove("hidden");
+      document.getElementById("submissionResult").classList.add("hidden");
+
+      document.getElementById("wsTitle").textContent = `#${activeProblem.id}. ${activeProblem.title}`;
+      document.getElementById("wsMeta").innerHTML = `
+        <span class="badge badge-cat">${activeProblem.category}</span>
+        <span class="badge badge-medium">${activeProblem.difficulty}</span>
+      `;
+      document.getElementById("wsDesc").textContent = activeProblem.description;
+      document.getElementById("wsExamples").textContent = activeProblem.sample_input
+        ? `Sample Input:\n${activeProblem.sample_input}\n\nExpected Output:\n${activeProblem.sample_output}`
+        : "Enter your numeric answer on the right and click Run & Submit.";
+
+      updateStarterTemplate();
+      elapsedSeconds = 0;
+      updateTimerText();
+      startFocusTimer();
+    }
+
+    function closeWorkspace() {
+      activeProblem = null;
+      clearInterval(timerInterval);
+      timerInterval = null;
+      document.getElementById("problemWorkspace").classList.add("hidden");
+      document.getElementById("problemListContainer").classList.remove("hidden");
+    }
+
+    function updateStarterTemplate() {
+      if (!activeProblem) return;
+      const lang = document.getElementById("langSelect").value;
+      const editor = document.getElementById("codeEditor");
+      if (activeProblem.category === "Aptitude") {
+        editor.value = "";
+        editor.placeholder = "Type your final numeric answer here...";
+        return;
+      }
+      const templates = activeProblem.starter_code || {};
+      editor.value = templates[lang] || `// Write your ${lang} solution here\n`;
+    }
+
+    function startFocusTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        elapsedSeconds++;
+        updateTimerText();
+      }, 1000);
+    }
+
+    function updateTimerText() {
+      const mins = String(Math.floor(elapsedSeconds / 60)).padStart(2, "0");
+      const secs = String(elapsedSeconds % 60).padStart(2, "0");
+      document.getElementById("timerDisplay").textContent = `${mins}:${secs}`;
+    }
+
+    async function submitSolution() {
+      if (!activeProblem || !currentUser) return;
+      const answer = document.getElementById("codeEditor").value;
+      const language = document.getElementById("langSelect").value;
+      const resBox = document.getElementById("submissionResult");
+      resBox.classList.remove("hidden");
+      resBox.innerHTML = "Evaluating all test cases...";
+
+      const res = await fetch(`${API_BASE}/api/problems/${activeProblem.id}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userEmail: currentUser.email,
+          language,
+          answer,
+          timeTakenSec: elapsedSeconds
+        })
+      });
+      const data = await res.json();
+
+      let html = "";
+      if (data.allPassed) {
+        resBox.style.borderColor = "var(--success)";
+        html += `<strong style="color:var(--success);font-size:0.98rem;">ACCEPTED! Passed ${data.passedCases}/${data.totalCases} test cases in ${elapsedSeconds}s (+1 Solved).</strong>`;
+        loadDashboardStats();
+      } else {
+        resBox.style.borderColor = "var(--danger)";
+        html += `<strong style="color:var(--danger);font-size:0.98rem;">FAILED: Passed ${data.passedCases}/${data.totalCases} test cases.</strong>`;
+        if (data.errorDetail) {
+          html += `<div style="color:#fca5a5;margin-top:6px;"><strong>Error Details:</strong> ${data.errorDetail}</div>`;
+        }
+      }
+
+      if (data.caseResults && data.caseResults.length > 0) {
+        html += data.caseResults.map(c => `
+          <div class="case-item ${c.status === 'PASSED' ? 'pass' : ''}">
+            <strong>Test Case #${c.case} [${c.status}]</strong> | Input: ${c.input} | Expected: ${c.expected} | Your Output: ${c.actual}
+          </div>
+        `).join("");
+      }
+
+      if (data.timeWarning) {
+        html += `<div class="time-advice">${data.timeWarning}</div>`;
+      }
+
+      resBox.innerHTML = html;
+    }
+
+    // Speech Synthesis (AI speaks question and feedback aloud)
+    function speakText(text) {
+      if (!document.getElementById("voiceOutputToggle").checked) return;
+      if (!("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 1.02;
+      window.speechSynthesis.speak(utter);
+    }
+
+    function stopVoiceSpeech() {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    }
+
+    // Speech Recognition (User speaks answer)
+    function toggleVoiceMic() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Speech Recognition requires Google Chrome or Microsoft Edge.");
+        return;
+      }
+      const micBtn = document.getElementById("micBtn");
+      if (isListening && recognition) {
+        recognition.stop();
+        return;
+      }
+      recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        isListening = true;
+        micBtn.textContent = "Listening... Speak Answer";
+        micBtn.className = "btn btn-danger mic-pulse";
+      };
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById("interviewInput").value = transcript;
+        submitRoundAnswer("interview", true);
+      };
+      recognition.onend = () => {
+        isListening = false;
+        micBtn.innerHTML = "&#127908; Speak Answer";
+        micBtn.className = "btn btn-secondary";
+      };
+      recognition.start();
+    }
+
+    function appendStyledMessage(containerId, text, styleClass) {
+      const box = document.getElementById(containerId);
+      const div = document.createElement("div");
+      div.className = `msg ${styleClass}`;
+      div.textContent = text;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function resetRoundSession(mode) {
+      roundState[mode] = { askedIds: [], currentQuestionId: null, score: 0, questionNumber: 0 };
+      const scoreBadgeId = mode === "interview" ? "interviewScoreBadge" : "trainingScoreBadge";
+      const containerId = mode === "interview" ? "interviewMessages" : "trainingMessages";
+      document.getElementById(scoreBadgeId).textContent = "Score: 0 / 30 (Cutoff: 16)";
+      document.getElementById(containerId).innerHTML =
+        `<div class="msg ai">Round selected! Click the Start / Ask button above to receive your first question.</div>`;
+    }
+
+    function askNextQuestion(mode, speakReply) {
+      const inputId = mode === "interview" ? "interviewInput" : "trainingInput";
+      document.getElementById(inputId).value = "Give me next question";
+      submitRoundAnswer(mode, speakReply);
+    }
+
+    function startMockInterview() {
+      roundState.interview = { askedIds: [], currentQuestionId: null, score: 0, questionNumber: 0 };
+      document.getElementById("interviewScoreBadge").textContent = "Score: 0 / 30 (Cutoff: 16)";
+      document.getElementById("interviewMessages").innerHTML = "";
+      document.getElementById("interviewInput").value = "Start interview";
+      submitRoundAnswer("interview", true);
+    }
+
+    async function submitRoundAnswer(mode, speakReply) {
+      if (!currentUser) return;
+      const isInterview = mode === "interview";
+      const inputEl = document.getElementById(isInterview ? "interviewInput" : "trainingInput");
+      const containerId = isInterview ? "interviewMessages" : "trainingMessages";
+      const scoreBadgeId = isInterview ? "interviewScoreBadge" : "trainingScoreBadge";
+      const roundType = isInterview
+        ? document.getElementById("voiceRoundSelect").value
+        : document.getElementById("roundSelect").value;
+      const state = roundState[mode];
+
+      const msg = inputEl.value.trim();
+      if (!msg) return;
+      inputEl.value = "";
+
+      appendStyledMessage(containerId, msg, "user");
+
+      const res = await fetch(`${API_BASE}/api/ai/coach`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userEmail: currentUser.email,
+          roundType,
+          userMessage: msg,
+          askedIds: state.askedIds,
+          currentQuestionId: state.currentQuestionId,
+          score: state.score,
+          questionNumber: state.questionNumber,
+          targetRole: currentUser.targetRole || "Software Engineer"
+        })
+      });
+      const data = await res.json();
+
+      state.askedIds = data.askedIds || state.askedIds;
+      state.currentQuestionId = data.nextQuestionId;
+      state.score = data.score ?? state.score;
+      state.questionNumber = data.questionNumber ?? state.questionNumber;
+
+      document.getElementById(scoreBadgeId).textContent = `Score: ${state.score} / 30 (Cutoff: 16)`;
+
+      // 1. Show Green card if answer was correct, or Red card (with correct answer) if wrong
+      if (data.feedback) {
+        const boxClass = data.answerStatus === "correct" ? "correct-box" : "wrong-box";
+        appendStyledMessage(containerId, data.feedback, boxClass);
+      }
+
+      // 2. Display next question (or final Pass/Fail result)
+      let speechToSpeak = "";
+      if (data.roundFinished) {
+        const finalClass = state.score >= 16 ? "correct-box" : "wrong-box";
+        appendStyledMessage(containerId, data.reply, finalClass);
+        speechToSpeak = `${data.feedback || ""} ${data.reply}`.trim();
+      } else if (data.questionText) {
+        appendStyledMessage(containerId, data.questionText, "ai");
+        speechToSpeak = data.feedback
+          ? `${data.answerStatus === "correct" ? "Your answer is correct." : data.feedback} Next question: ${data.questionText}`
+          : data.questionText;
+      }
+
+      if (speakReply && speechToSpeak) {
+        speakText(speechToSpeak);
+      }
+    }
+  </script>
+</body>
+</html>
